@@ -2,12 +2,13 @@
 An open addressing hash table implementation using quadratic probing, as well as STL style iterators.
 templated to accept user define hash function, defaults to the included hashing algorithm
 which is a variant of bernstein's hash that add's an internal mixing step using Knuth's 
-cyclic shift.
+cyclic shift. The table automatically resizes to shrink and grow to keep balance between load factor
+and memory usage in harmony.
 
 # Iterators
 IterableMap supplies a begin() and end() method which returns iterators for use with C++'s
 enhanced for loop. The result of find() also returns an Iterator to a key/value pair, 
-or returns end() on failure.
+or returns end() on failure. This is an unordered collection.
 
 # Operations
   ```
