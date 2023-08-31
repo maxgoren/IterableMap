@@ -20,6 +20,7 @@ or returns end() on failure.
      maxsize() - returns the actual size of the underlying table
      begin() - returns a forward iterator to the first value in the table
      end() - returns an iterator to one place past the last value in the table.
+     cbegin()/cend() - same as above, but made const
      operator[key] - returns a reference to the value associated with the key, if no record is present it creates one and returns a reference to the empty value for writing.
   ```
 
