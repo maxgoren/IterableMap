@@ -10,7 +10,7 @@ enhanced for loop. The result of find() also returns an Iterator to a key/value 
 or returns end() on failure.
 
 # Operations
-  '''
+  ```
      put(Key, Value) - add a key/value pair to the table, or updates the value of the associated key if already present.
      find(Key) - determine if a key is present in the table, returns an iterator to the key/value pair if present, or returns end() if not.
      get(Key) - returns a reference to the value associated with the key.
@@ -21,11 +21,11 @@ or returns end() on failure.
      begin() - returns a forward iterator to the first value in the table
      end() - returns an iterator to one place past the last value in the table.
      operator[key] - returns a reference to the value associated with the key, if no record is present it creates one and returns a reference to the empty value for writing.
-  '''
+  ```
 
 # Example usage
 
-'''
+```
 #include <iostream>
 #include "iterable_hashtable.hpp"
 using std::cout;
@@ -56,4 +56,4 @@ int main() {
         }
     }
 }
-'''
+```
