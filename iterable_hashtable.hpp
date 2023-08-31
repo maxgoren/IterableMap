@@ -1,9 +1,33 @@
+/*
+MIT License
+
+Copyright (c) 2023 Max Goren - root@uniqueptr.com, www.maxgcoding.com
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+*/
+
 #ifndef iterable_hashtable_hpp
 #define iterable_hashtable_hpp
 #include "hashfn.hpp"
 
 template <typename K, typename V, class hasher = hashfn<K>>
-class hashtable {
+class IterableMap {
     private:
         struct node {
             K key;
@@ -89,10 +113,13 @@ class hashtable {
                 }
         };
     public:
-        hashtable(int max = 113) {
+        IterableMap(int max = 113) {
             maxn = max;
             n = 0;
             table = new node[maxn];
+        }
+        ~IterableMap() {
+            delete [] table;
         }
         void put(K key, V value) {
             if (loadfactor() > 0.46) growAndRehash();
@@ -150,6 +177,12 @@ class hashtable {
             return Iterator(table);
         }
         Iterator end() {
+            return Iterator(table+maxn);
+        }
+        const Iterator cbegin() const {
+            return Iterator(table);
+        }
+        const Iterator cend() const {
             return Iterator(table+maxn);
         }
         V& operator[](K key) {
