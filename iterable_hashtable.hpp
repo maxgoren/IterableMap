@@ -25,13 +25,15 @@ SOFTWARE.
 #ifndef iterable_hashtable_hpp
 #define iterable_hashtable_hpp
 #include <vector>
+#include <iostream>
 #include "hashfn.hpp"
-
+using std::cout;
+using std::endl;
 template <typename K, typename V, class hasher = hashfn<K>>
 class IterableMap {
     private:
-        constexpr static double MAX_LOADFACTOR = 0.46;
-        constexpr static double MAX_SHRINKFACTOR = 0.37;
+        constexpr static double MAX_LOADFACTOR = 0.66;
+        constexpr static double MAX_SHRINKFACTOR = 0.78;
         struct MapEntry {
             K key;
             V value;
@@ -55,9 +57,10 @@ class IterableMap {
         MapEntry *table;
         int maxn;
         int n;
+        int tombstones;
         void growAndRehash() {
             int oldmax = maxn;
-            maxn *= 2;
+            maxn = 2*oldmax;
             MapEntry* temp = table;
             table = new MapEntry[maxn];
             n = 0;
@@ -68,9 +71,9 @@ class IterableMap {
             delete [] temp;
         }
         void shrinkAndRehash() {
-            int tmxn = maxn/1.3;
+            int tmxn = maxn/1.21;
             int oldmax = maxn;
-            do { tmxn++; } while (((double)n/tmxn) > MAX_SHRINKFACTOR);
+            do { tmxn+=5; } while (((double)n/tmxn) > MAX_SHRINKFACTOR);
             maxn = tmxn;
             MapEntry* temp = table;
             table = new MapEntry[maxn];
@@ -90,11 +93,14 @@ class IterableMap {
                 MapEntry* __MapEntryPtr;
             public:
                 Iterator(MapEntry* c) : __MapEntryPtr(c) {
-                    while (__MapEntryPtr->isEmpty() || __MapEntryPtr->tombstoned()) {
-                        __MapEntryPtr++;
-                    }
+                    
                 }
                 pair<K,V> operator*() {
+                    if (__MapEntryPtr->isEmpty() || __MapEntryPtr->tombstoned()) {
+                        while (__MapEntryPtr->isEmpty() || __MapEntryPtr->tombstoned()) {
+                            __MapEntryPtr++;
+                        }
+                    }
                     return make_pair(__MapEntryPtr->key, __MapEntryPtr->value);
                 }
                 Iterator operator++() {
@@ -116,10 +122,11 @@ class IterableMap {
                 }
         };
     public:
-        IterableMap(int max = 113) {
+        IterableMap(int max = 1013) {
             maxn = max;
             n = 0;
             table = new MapEntry[maxn];
+            tombstones = 0;
         }
         IterableMap(const IterableMap& o) {
             for (auto it = o.begin(); it != o.end(); it++) {
@@ -130,7 +137,9 @@ class IterableMap {
             delete [] table;
         }
         void put(K key, V value) {
-            if (loadfactor() > MAX_LOADFACTOR) growAndRehash();
+            if (loadfactor() > MAX_LOADFACTOR) {
+                growAndRehash();
+            }
             int idx = hasher()(key) % maxn;
             int m = 1;
             while (!table[idx].isEmpty()) {
@@ -178,7 +187,10 @@ class IterableMap {
             if (found) {
                 table[idx].tombstone = true;
                 n--;
-                if (loadfactor() > MAX_SHRINKFACTOR) shrinkAndRehash();
+                tombstones++;
+                if (((double)(n+tombstones)/maxn) > MAX_SHRINKFACTOR) {
+                    shrinkAndRehash();
+                }
             }
         }
         Iterator begin() {
