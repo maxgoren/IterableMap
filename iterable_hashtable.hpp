@@ -24,23 +24,26 @@ SOFTWARE.
 
 #ifndef iterable_hashtable_hpp
 #define iterable_hashtable_hpp
+#include <vector>
 #include "hashfn.hpp"
 
 template <typename K, typename V, class hasher = hashfn<K>>
 class IterableMap {
     private:
-        struct node {
+        constexpr static double MAX_LOADFACTOR = 0.46;
+        constexpr static double MAX_SHRINKFACTOR = 0.37;
+        struct MapEntry {
             K key;
             V value;
             bool empty;
             bool tombstone;
-            node(K _key, V _value) {
+            MapEntry(K _key, V _value) {
                 key = _key; value = _value;
                 empty = false;
                 tombstone = false;
             }
-            node() { empty = true; tombstone = false; }
-            node(const node& t) {
+            MapEntry() { empty = true; tombstone = false; }
+            MapEntry(const MapEntry& t) {
                 key = t.key;
                 value = t.value;
                 empty = t.empty;
@@ -49,14 +52,14 @@ class IterableMap {
             bool isEmpty() const { return empty; }
             bool tombstoned() const { return tombstone; }
         };
-        node *table;
+        MapEntry *table;
         int maxn;
         int n;
         void growAndRehash() {
             int oldmax = maxn;
             maxn *= 2;
-            node* temp = table;
-            table = new node[maxn];
+            MapEntry* temp = table;
+            table = new MapEntry[maxn];
             n = 0;
             for (int i = 0; i < oldmax; i++) {
                 if (!temp[i].isEmpty() && !temp[i].tombstoned())
@@ -67,10 +70,10 @@ class IterableMap {
         void shrinkAndRehash() {
             int tmxn = maxn/1.3;
             int oldmax = maxn;
-            do { tmxn++; } while (((double)n/tmxn) > 0.36);
+            do { tmxn++; } while (((double)n/tmxn) > MAX_SHRINKFACTOR);
             maxn = tmxn;
-            node* temp = table;
-            table = new node[maxn];
+            MapEntry* temp = table;
+            table = new MapEntry[maxn];
             n = 0;
             for (int i = 0; i < oldmax; i++) {
                 if (!temp[i].isEmpty() && !temp[i].tombstoned())
@@ -84,20 +87,20 @@ class IterableMap {
     public:
         class Iterator {
             private:
-                node* __nodePtr;
+                MapEntry* __MapEntryPtr;
             public:
-                Iterator(node* c) : __nodePtr(c) {
-                    while (__nodePtr->isEmpty() || __nodePtr->tombstoned()) {
-                        __nodePtr++;
+                Iterator(MapEntry* c) : __MapEntryPtr(c) {
+                    while (__MapEntryPtr->isEmpty() || __MapEntryPtr->tombstoned()) {
+                        __MapEntryPtr++;
                     }
                 }
                 pair<K,V> operator*() {
-                    return make_pair(__nodePtr->key, __nodePtr->value);
+                    return make_pair(__MapEntryPtr->key, __MapEntryPtr->value);
                 }
                 Iterator operator++() {
                     do {
-                            __nodePtr++;
-                    } while (__nodePtr->isEmpty() || __nodePtr->tombstoned());
+                            __MapEntryPtr++;
+                    } while (__MapEntryPtr->isEmpty() || __MapEntryPtr->tombstoned());
                     return *this;
                 }
                 Iterator operator++(int) {
@@ -106,7 +109,7 @@ class IterableMap {
                     return tmp;
                 }
                 bool operator==(const Iterator& o) const {
-                    return __nodePtr == o.__nodePtr;
+                    return __MapEntryPtr == o.__MapEntryPtr;
                 }
                 bool operator!=(const Iterator& o) const {
                     return !(*this==o);
@@ -116,13 +119,18 @@ class IterableMap {
         IterableMap(int max = 113) {
             maxn = max;
             n = 0;
-            table = new node[maxn];
+            table = new MapEntry[maxn];
+        }
+        IterableMap(const IterableMap& o) {
+            for (auto it = o.begin(); it != o.end(); it++) {
+                put((*it).first, (*it).second);
+            }
         }
         ~IterableMap() {
             delete [] table;
         }
         void put(K key, V value) {
-            if (loadfactor() > 0.46) growAndRehash();
+            if (loadfactor() > MAX_LOADFACTOR) growAndRehash();
             int idx = hasher()(key) % maxn;
             int m = 1;
             while (!table[idx].isEmpty()) {
@@ -170,7 +178,7 @@ class IterableMap {
             if (found) {
                 table[idx].tombstone = true;
                 n--;
-                if (loadfactor() > .3) shrinkAndRehash();
+                if (loadfactor() > MAX_SHRINKFACTOR) shrinkAndRehash();
             }
         }
         Iterator begin() {
