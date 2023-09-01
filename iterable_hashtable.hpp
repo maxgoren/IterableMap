@@ -24,15 +24,13 @@ SOFTWARE.
 
 #ifndef iterable_hashtable_hpp
 #define iterable_hashtable_hpp
-#include <vector>
 #include <iostream>
 #include "hashfn.hpp"
-using std::cout;
-using std::endl;
+
 template <typename K, typename V, class hasher = hashfn<K>>
 class IterableMap {
     private:
-        constexpr static double MAX_LOADFACTOR = 0.66;
+        constexpr static double MAX_LOADFACTOR = 0.5;
         constexpr static double MAX_SHRINKFACTOR = 0.78;
         struct MapEntry {
             K key;
@@ -73,7 +71,7 @@ class IterableMap {
         void shrinkAndRehash() {
             int tmxn = maxn/1.21;
             int oldmax = maxn;
-            do { tmxn+=5; } while (((double)n/tmxn) > MAX_SHRINKFACTOR);
+            do { tmxn+=5; } while (((double)n/tmxn) > MAX_LOADFACTOR);
             maxn = tmxn;
             MapEntry* temp = table;
             table = new MapEntry[maxn];
